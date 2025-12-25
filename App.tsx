@@ -26,7 +26,7 @@ const App: React.FC = () => {
         await dataStore.init();
         
         setSyncStatus('Đang kết nối Đám mây Google...');
-        // Cố gắng lấy dữ liệu mây ngay từ đầu
+        // Lấy dữ liệu mây ngay khi mở app
         await mockService.pullFromCloud(); 
 
         const current = mockService.getCurrentUser();
@@ -44,12 +44,13 @@ const App: React.FC = () => {
     init();
   }, []);
 
-  // Tự động đồng bộ ngầm
+  // TỰ ĐỘNG ĐỒNG BỘ NỀN (Tăng lên 15 giây/lần)
   useEffect(() => {
       if (user) {
           const syncInterval = setInterval(() => {
+              console.log("Background sync triggered...");
               mockService.pullFromCloud();
-          }, 60000);
+          }, 15000); 
           return () => clearInterval(syncInterval);
       }
   }, [user]);
@@ -76,7 +77,7 @@ const App: React.FC = () => {
               <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-6"></div>
               <div className="text-2xl font-black tracking-widest animate-pulse uppercase text-center">PC06 HÀ NỘI</div>
               <div className="text-sm text-blue-400 mt-4 font-mono text-center max-w-xs">{syncStatus}</div>
-              <div className="mt-10 text-[10px] text-slate-500 uppercase tracking-widest">Hệ thống đồng bộ thời gian thực v3.1</div>
+              <div className="mt-10 text-[10px] text-slate-500 uppercase tracking-widest">Hệ thống đồng bộ thời gian thực v3.2</div>
           </div>
       );
   }

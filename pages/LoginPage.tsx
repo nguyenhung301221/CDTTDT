@@ -18,19 +18,51 @@ export const LoginPage: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [diagStep, setDiagStep] = useState<string>('');
   const [isTesting, setIsTesting] = useState(false);
 
+  // Hàm chuẩn hóa email để tránh lỗi nhập liệu
+  const normalizeEmail = (input: string) => {
+    let clean = input.trim().toLowerCase();
+    if (!clean) return "";
+    
+    // Nếu chỉ nhập "hoankiem", tự chuyển thành "p.hoankiem@pol.vn"
+    if (!clean.includes('@')) {
+        clean = `p.${clean}@pol.vn`;
+    } 
+    // Nếu nhập "hoankiem@pol.vn", tự thêm "p." nếu thiếu
+    else if (clean.endsWith('@pol.vn') && !clean.startsWith('p.') && !clean.includes('admin') && !clean.includes('canbo')) {
+        clean = `p.${clean}`;
+    }
+    return clean;
+  };
+
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    const result = await mockService.login(email);
-    if (result.success) setStep(2);
-    else setError('Email không hợp lệ hoặc không có quyền truy cập.');
+    const finalEmail = normalizeEmail(email);
+    
+    if (!finalEmail) {
+        setError("Vui lòng nhập email hoặc tên đơn vị.");
+        return;
+    }
+
+    const result = await mockService.login(finalEmail);
+    if (result.success) {
+        setEmail(finalEmail); // Cập nhật lại email đã chuẩn hóa vào state
+        setStep(2);
+    } else {
+        setError(`Không tìm thấy tài khoản: ${finalEmail}\n\nGợi ý: Thử nhập 'hoankiem' hoặc 'p.hoankiem@pol.vn'`);
+    }
   };
 
   const handleOtpSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
     const user = await mockService.verifyOTP(email, otp);
-    if (user) onLoginSuccess(user);
-    else setError('Mã OTP sai (Thử 123456)');
+    if (user) {
+        onLoginSuccess(user);
+    } else {
+        setError('Mã xác thực không chính xác. Vui lòng thử lại với mã 123456');
+        setOtp(''); // Clear OTP để nhập lại
+    }
   };
 
   const runDiagnostic = async () => {
@@ -82,7 +114,7 @@ export const LoginPage: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         {error && (
           <div className="bg-red-50 text-red-600 text-[11px] font-bold p-4 rounded-2xl mb-6 border border-red-100 flex items-start whitespace-pre-line">
             <svg className="w-4 h-4 mr-2 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
-            {error}
+            <div className="flex-1">{error}</div>
           </div>
         )}
 
@@ -91,12 +123,12 @@ export const LoginPage: React.FC<LoginProps> = ({ onLoginSuccess }) => {
             {step === 1 ? (
               <form onSubmit={handleEmailSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email công vụ</label>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Tài khoản đơn vị</label>
                   <input
-                    type="email"
+                    type="text"
                     required
                     className="w-full px-6 py-5 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-blue-600 focus:bg-white font-bold text-slate-700 transition-all text-sm"
-                    placeholder="ví dụ: p.hoankiem@pol.vn"
+                    placeholder="Nhập 'hoankiem' hoặc email..."
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
@@ -107,18 +139,25 @@ export const LoginPage: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                 >
                   Tiếp tục
                 </button>
-                <button type="button" onClick={() => setShowConfig(true)} className="w-full text-[10px] font-black text-slate-400 uppercase tracking-widest pt-4 hover:text-blue-600">
-                    ⚙️ Cấu hình liên máy tính (Fix 404)
-                </button>
+                <div className="pt-4 text-center">
+                   <button type="button" onClick={() => setShowConfig(true)} className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-blue-600">
+                        ⚙️ Cấu hình liên máy tính
+                   </button>
+                </div>
               </form>
             ) : (
               <form onSubmit={handleOtpSubmit} className="space-y-6">
+                <div className="text-center mb-2">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase">Đang đăng nhập:</p>
+                    <p className="text-sm font-black text-blue-600">{email}</p>
+                </div>
                 <div className="space-y-2">
-                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center block">Nhập mã xác thực</label>
+                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center block">Nhập mã xác thực (123456)</label>
                    <input
                     type="text"
                     required
                     maxLength={6}
+                    autoFocus
                     className="w-full px-5 py-6 border-2 border-slate-100 rounded-3xl focus:outline-none focus:border-blue-600 text-center text-4xl font-black tracking-[0.4em] text-blue-600 bg-slate-50 shadow-inner"
                     placeholder="000000"
                     value={otp}
@@ -129,9 +168,9 @@ export const LoginPage: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                   type="submit"
                   className="w-full bg-blue-600 text-white py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-blue-600/30 hover:bg-blue-700 transition-all"
                 >
-                  Đăng nhập hệ thống
+                  Xác nhận OTP
                 </button>
-                <button type="button" onClick={() => setStep(1)} className="w-full text-slate-400 text-[10px] font-black uppercase tracking-widest">Dùng email khác</button>
+                <button type="button" onClick={() => setStep(1)} className="w-full text-slate-400 text-[10px] font-black uppercase tracking-widest">Dùng tài khoản khác</button>
               </form>
             )}
           </>
@@ -142,7 +181,7 @@ export const LoginPage: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                   <span className="px-2 py-1 bg-blue-100 text-blue-600 rounded-lg text-[9px] font-black">ULTRA-RESILIENT</span>
               </div>
               <p className="text-[11px] text-slate-500 leading-relaxed">
-                Hệ thống đang sử dụng cơ chế truyền tin <b>POST-Direct</b> để vượt qua tường lửa và lỗi CORS của Google.
+                Dán link <b>Apps Script</b> của bạn vào đây để đồng bộ dữ liệu giữa các máy tính.
               </p>
               
               <textarea 

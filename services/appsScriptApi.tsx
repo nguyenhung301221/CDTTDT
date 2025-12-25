@@ -1,4 +1,5 @@
-import { API_BASE_URL } from "./apiConfig";
+
+import { getApiUrl } from "./apiConfig";
 
 type ApiOk<T> = { ok: true; data?: T; action?: string; time?: string };
 type ApiErr = { ok: false; error: string };
@@ -6,23 +7,33 @@ type ApiResp<T> = ApiOk<T> | ApiErr;
 
 // ====== Helper: GET ======
 async function apiGet<T>(params: Record<string, string>): Promise<ApiResp<T>> {
-  const url = new URL(API_BASE_URL);
-  Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+  try {
+    const baseUrl = getApiUrl();
+    const url = new URL(baseUrl);
+    Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
 
-  const res = await fetch(url.toString(), { method: "GET" });
-  const json = (await res.json()) as ApiResp<T>;
-  return json;
+    const res = await fetch(url.toString(), { method: "GET" });
+    const json = (await res.json()) as ApiResp<T>;
+    return json;
+  } catch (e: any) {
+    return { ok: false, error: e.message };
+  }
 }
 
 // ====== Helper: POST ======
 async function apiPost<T>(body: Record<string, any>): Promise<ApiResp<T>> {
-  const res = await fetch(API_BASE_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  const json = (await res.json()) as ApiResp<T>;
-  return json;
+  try {
+    const baseUrl = getApiUrl();
+    const res = await fetch(baseUrl, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify(body),
+    });
+    const json = (await res.json()) as ApiResp<T>;
+    return json;
+  } catch (e: any) {
+    return { ok: false, error: e.message };
+  }
 }
 
 // ====== API FUNCTIONS ======

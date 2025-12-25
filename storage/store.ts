@@ -2,7 +2,7 @@
 import { User, Issue, WardRegistration, AuditLog, BonusRequest } from '../types';
 import { MOCK_USERS } from '../constants';
 
-const DB_NAME = 'PC06_Hanoi_Eternal_DB'; // Đổi tên DB để reset nếu cần
+const DB_NAME = 'PC06_Hanoi_Eternal_DB';
 const DB_VERSION = 5; 
 const STORE_NAME = 'permanent_storage';
 
@@ -63,7 +63,6 @@ export interface StoreSchema {
 
 export const dataStore = {
   async init(): Promise<StoreSchema> {
-    // Yêu cầu quyền lưu trữ vĩnh viễn
     let isPersistent = false;
     if (navigator.storage && navigator.storage.persist) {
         isPersistent = await navigator.storage.persist();
@@ -82,7 +81,6 @@ export const dataStore = {
         };
     }
 
-    // Luôn đảm bảo có danh sách User gốc
     MOCK_USERS.forEach(mockUser => {
       if (!store!.users[mockUser.id]) {
         store!.users[mockUser.id] = mockUser;
@@ -113,7 +111,6 @@ export const dataStore = {
       return "0 MB";
   },
 
-  // Fix: Add isPersistent method to check storage status
   async isPersistent(): Promise<boolean> {
       if (navigator.storage && navigator.storage.persisted) {
           return await navigator.storage.persisted();
@@ -121,18 +118,15 @@ export const dataStore = {
       return false;
   },
 
-  // Fix: Add archiveOldData to optimize storage by "compressing" old images
   async archiveOldData(days: number): Promise<{ count: number }> {
       const store = await this.getStore();
       let count = 0;
       const cutoff = new Date();
       cutoff.setDate(cutoff.getDate() - days);
 
-      // Fix: Cast the object values to Issue[] to fix the 'unknown' type error
-      (Object.values(store.issues) as Issue[]).forEach(issue => {
+      Object.values(store.issues).forEach((issue: any) => {
           if (new Date(issue.createdTime) < cutoff) {
               count++;
-              // Logic to clear high-res data and keep small snapshots would go here
           }
       });
       
