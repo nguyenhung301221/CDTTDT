@@ -1,0 +1,7 @@
+{
+  "name": "Bản chấm điểm pờ cờ 0 sáu (bản save 1)",
+  "description": "Hệ thống quản lý chỉ tiêu chấm điểm duy trì TTĐT-TTCC-VSMT theo thời gian thực phục vụ PC06 và Công an xã/phường.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
